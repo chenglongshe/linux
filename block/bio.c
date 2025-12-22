@@ -850,6 +850,9 @@ static int __bio_clone(struct bio *bio, struct bio *bio_src, gfp_t gfp)
 	if (bio_integrity(bio_src) &&
 	    bio_integrity_clone(bio, bio_src, gfp) < 0)
 		return -ENOMEM;
+
+	bio->bi_max_vecs = bio_src->bi_max_vecs;
+	bio->bi_vcnt = bio_src->bi_vcnt;
 	return 0;
 }
 
