@@ -162,7 +162,7 @@ bool bio_integrity_prep(struct bio *bio)
 		if (bi->csum_type == BLK_INTEGRITY_CSUM_IP)
 			bid->bip.bip_flags |= BIP_IP_CHECKSUM;
 		if (bi->csum_type)
-			bid->bip.bip_flags |= BIP_CHECK_GUARD;
+			bid->bip.bip_flags |= BIP_CHECK_GUARD | BIP_CHECK_APPTAG;
 		if (bi->flags & BLK_INTEGRITY_REF_TAG)
 			bid->bip.bip_flags |= BIP_CHECK_REFTAG;
 	}
