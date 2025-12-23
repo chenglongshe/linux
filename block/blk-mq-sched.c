@@ -559,7 +559,7 @@ int blk_mq_alloc_sched_res(struct request_queue *q,
 	res->data = blk_mq_alloc_sched_data(q, type);
 	if (IS_ERR(res->data)) {
 		blk_mq_free_sched_tags(res->et, set);
-		return -ENOMEM;
+		return PTR_ERR(res->data);
 	}
 
 	return 0;
