@@ -191,6 +191,9 @@ static int blk_validate_integrity_limits(struct queue_limits *lim)
 			return -EINVAL;
 		}
 		break;
+	default:
+		pr_warn("Unknown integrity checksum type %u\n", bi->csum_type);
+		return -EINVAL;
 	}
 
 	if (!bi->interval_exp) {
