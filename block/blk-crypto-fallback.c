@@ -363,6 +363,7 @@ out_put_enc_bio:
 	if (enc_bio)
 		bio_uninit(enc_bio);
 	kfree(enc_bio);
+	bio_crypt_free_ctx(src_bio);
 	return ret;
 }
 
