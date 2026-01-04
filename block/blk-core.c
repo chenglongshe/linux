@@ -388,6 +388,11 @@ static void blk_rq_timed_out_timer(struct timer_list *t)
 
 static void blk_timeout_work(struct work_struct *work)
 {
+	struct request_queue *q =
+		container_of(work, struct request_queue, timeout_work);
+
+	if (queue_is_mq(q))
+		blk_mq_timeout_work(work);
 }
 
 struct request_queue *blk_alloc_queue(struct queue_limits *lim, int node_id)

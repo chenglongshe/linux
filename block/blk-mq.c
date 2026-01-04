@@ -1722,7 +1722,7 @@ static bool blk_mq_handle_expired(struct request *rq, void *priv)
 	return true;
 }
 
-static void blk_mq_timeout_work(struct work_struct *work)
+void blk_mq_timeout_work(struct work_struct *work)
 {
 	struct request_queue *q =
 		container_of(work, struct request_queue, timeout_work);
@@ -1780,6 +1780,7 @@ static void blk_mq_timeout_work(struct work_struct *work)
 	}
 	blk_queue_exit(q);
 }
+EXPORT_SYMBOL_GPL(blk_mq_timeout_work);
 
 struct flush_busy_ctx_data {
 	struct blk_mq_hw_ctx *hctx;
