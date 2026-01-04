@@ -283,13 +283,13 @@ static void blk_kick_flush(struct request_queue *q, struct blk_flush_queue *fq,
 	if (fq->flush_pending_idx != fq->flush_running_idx || list_empty(pending))
 		return;
 
-	first_rq = list_first_entry(pending, struct request, queuelist);
-
 	/* C2 and C3 */
 	if (fq->flush_data_in_flight &&
 	    time_before(jiffies,
 			fq->flush_pending_since + FLUSH_PENDING_TIMEOUT))
 		return;
+
+	first_rq = list_first_entry(pending, struct request, queuelist);
 
 	/*
 	 * Issue flush and toggle pending_idx.  This makes pending_idx
