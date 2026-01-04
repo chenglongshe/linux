@@ -142,9 +142,9 @@ int m68328_hwclk(int set, struct rtc_time *t)
 	t->tm_year = 1;
 	t->tm_mon = 0;
 	t->tm_mday = 1;
-	t->tm_hour = (now & RTCTIME_HOURS_MASK) >> RTCTIME_HOURS_SHIFT;
-	t->tm_min = (now & RTCTIME_MINUTES_MASK) >> RTCTIME_MINUTES_SHIFT;
-	t->tm_sec = (now & RTCTIME_SECONDS_MASK) >> RTCTIME_SECONDS_SHIFT;
+	t->tm_hour = FIELD_GET(RTCTIME_HOURS_MASK, now);
+	t->tm_min = FIELD_GET(RTCTIME_MINUTES_MASK, now);
+	t->tm_sec = FIELD_GET(RTCTIME_SECONDS_MASK, now);
 
 	return 0;
 }
