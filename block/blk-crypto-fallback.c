@@ -282,7 +282,7 @@ static bool blk_crypto_fallback_encrypt_bio(struct bio **bio_ptr)
 	enc_bio = blk_crypto_fallback_clone_bio(src_bio);
 	if (!enc_bio) {
 		src_bio->bi_status = BLK_STS_RESOURCE;
-		return false;
+		goto out_free_ctx;
 	}
 
 	/*
@@ -363,6 +363,7 @@ out_put_enc_bio:
 	if (enc_bio)
 		bio_uninit(enc_bio);
 	kfree(enc_bio);
+out_free_ctx:
 	bio_crypt_free_ctx(src_bio);
 	return ret;
 }
