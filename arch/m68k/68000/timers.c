@@ -126,10 +126,9 @@ int m68328_hwclk(int set, struct rtc_time *t)
 	u32 now;
 
 	if (set) {
-		if (t->tm_hour < 0 || t->tm_min < 0 || t->tm_sec < 0)
-			return -EINVAL;
-
-		if (t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
+		if ((unsigned int)t->tm_hour >= 24 ||
+		    (unsigned int)t->tm_min >= 60 ||
+		    (unsigned int)t->tm_sec >= 60)
 			return -EINVAL;
 
 		now = FIELD_PREP(RTCTIME_HOURS_MASK, t->tm_hour) |
