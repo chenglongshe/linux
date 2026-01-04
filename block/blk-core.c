@@ -391,8 +391,10 @@ static void blk_timeout_work(struct work_struct *work)
 	struct request_queue *q =
 		container_of(work, struct request_queue, timeout_work);
 
-	if (queue_is_mq(q))
-		blk_mq_timeout_work(work);
+	if (WARN_ON_ONCE(!queue_is_mq(q)))
+		return;
+
+	blk_mq_timeout_work(work);
 }
 
 struct request_queue *blk_alloc_queue(struct queue_limits *lim, int node_id)
