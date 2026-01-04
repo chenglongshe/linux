@@ -121,15 +121,26 @@ void hw_timer_init(void)
 
 int m68328_hwclk(int set, struct rtc_time *t)
 {
-	if (!set) {
-		long now = RTCTIME;
-		t->tm_year = 1;
-		t->tm_mon = 0;
-		t->tm_mday = 1;
-		t->tm_hour = (now >> 24) % 24;
-		t->tm_min = (now >> 16) % 60;
-		t->tm_sec = now % 60;
+	u32 now;
+
+	if (set) {
+		now = ((t->tm_hour << RTCTIME_HOURS_SHIFT) &
+		       RTCTIME_HOURS_MASK) |
+		      ((t->tm_min << RTCTIME_MINUTES_SHIFT) &
+		       RTCTIME_MINUTES_MASK) |
+		      ((t->tm_sec << RTCTIME_SECONDS_SHIFT) &
+		       RTCTIME_SECONDS_MASK);
+		RTCTIME = now;
+		return 0;
 	}
+
+	now = RTCTIME;
+	t->tm_year = 1;
+	t->tm_mon = 0;
+	t->tm_mday = 1;
+	t->tm_hour = (now & RTCTIME_HOURS_MASK) >> RTCTIME_HOURS_SHIFT;
+	t->tm_min = (now & RTCTIME_MINUTES_MASK) >> RTCTIME_MINUTES_SHIFT;
+	t->tm_sec = (now & RTCTIME_SECONDS_MASK) >> RTCTIME_SECONDS_SHIFT;
 
 	return 0;
 }
