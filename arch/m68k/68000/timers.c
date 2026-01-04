@@ -129,12 +129,15 @@ int m68328_hwclk(int set, struct rtc_time *t)
 		    t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
 			return -EINVAL;
 
-		now = ((t->tm_hour << RTCTIME_HOURS_SHIFT) &
-		       RTCTIME_HOURS_MASK) |
-		      ((t->tm_min << RTCTIME_MINUTES_SHIFT) &
-		       RTCTIME_MINUTES_MASK) |
-		      ((t->tm_sec << RTCTIME_SECONDS_SHIFT) &
-		       RTCTIME_SECONDS_MASK);
+		now = ((t->tm_hour & (RTCTIME_HOURS_MASK >>
+				      RTCTIME_HOURS_SHIFT)) <<
+		       RTCTIME_HOURS_SHIFT) |
+		      ((t->tm_min & (RTCTIME_MINUTES_MASK >>
+				     RTCTIME_MINUTES_SHIFT)) <<
+		       RTCTIME_MINUTES_SHIFT) |
+		      ((t->tm_sec & (RTCTIME_SECONDS_MASK >>
+				     RTCTIME_SECONDS_SHIFT)) <<
+		       RTCTIME_SECONDS_SHIFT);
 		RTCTIME = now;
 		return 0;
 	}
