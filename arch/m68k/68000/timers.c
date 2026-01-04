@@ -17,6 +17,7 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
+#include <linux/bitfield.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/errno.h>
@@ -125,19 +126,15 @@ int m68328_hwclk(int set, struct rtc_time *t)
 	u32 now;
 
 	if (set) {
-		if (t->tm_hour < 0 || t->tm_min < 0 || t->tm_sec < 0 ||
-		    t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
+		if (t->tm_hour < 0 || t->tm_min < 0 || t->tm_sec < 0)
 			return -EINVAL;
 
-		now = ((t->tm_hour & (RTCTIME_HOURS_MASK >>
-				      RTCTIME_HOURS_SHIFT)) <<
-		       RTCTIME_HOURS_SHIFT) |
-		      ((t->tm_min & (RTCTIME_MINUTES_MASK >>
-				     RTCTIME_MINUTES_SHIFT)) <<
-		       RTCTIME_MINUTES_SHIFT) |
-		      ((t->tm_sec & (RTCTIME_SECONDS_MASK >>
-				     RTCTIME_SECONDS_SHIFT)) <<
-		       RTCTIME_SECONDS_SHIFT);
+		if (t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
+			return -EINVAL;
+
+		now = FIELD_PREP(RTCTIME_HOURS_MASK, t->tm_hour) |
+		      FIELD_PREP(RTCTIME_MINUTES_MASK, t->tm_min) |
+		      FIELD_PREP(RTCTIME_SECONDS_MASK, t->tm_sec);
 		RTCTIME = now;
 		return 0;
 	}
