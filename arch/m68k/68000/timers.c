@@ -19,6 +19,7 @@
 #include <linux/mm.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
+#include <linux/errno.h>
 #include <linux/clocksource.h>
 #include <linux/rtc.h>
 #include <asm/setup.h>
@@ -124,6 +125,9 @@ int m68328_hwclk(int set, struct rtc_time *t)
 	u32 now;
 
 	if (set) {
+		if (t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
+			return -EINVAL;
+
 		now = ((t->tm_hour << RTCTIME_HOURS_SHIFT) &
 		       RTCTIME_HOURS_MASK) |
 		      ((t->tm_min << RTCTIME_MINUTES_SHIFT) &
