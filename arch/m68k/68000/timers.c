@@ -125,7 +125,8 @@ int m68328_hwclk(int set, struct rtc_time *t)
 	u32 now;
 
 	if (set) {
-		if (t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
+		if (t->tm_hour < 0 || t->tm_min < 0 || t->tm_sec < 0 ||
+		    t->tm_hour >= 24 || t->tm_min >= 60 || t->tm_sec >= 60)
 			return -EINVAL;
 
 		now = ((t->tm_hour << RTCTIME_HOURS_SHIFT) &
