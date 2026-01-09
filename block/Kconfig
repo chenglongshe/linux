@@ -209,6 +209,13 @@ config BLK_INLINE_ENCRYPTION_FALLBACK
 	  by falling back to the kernel crypto API when inline
 	  encryption hardware is not present.
 
+config BLK_LIB_KUNIT_TEST
+	tristate "Block layer helpers KUnit tests" if !KUNIT_ALL_TESTS
+	depends on KUNIT
+	help
+	  Build KUnit tests for blk-lib helpers. These tests are only run
+	  under KUnit and have no effect on production kernels.
+
 source "block/partitions/Kconfig"
 
 config BLK_PM
