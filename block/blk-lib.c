@@ -65,6 +65,9 @@ int __blkdev_issue_discard(struct block_device *bdev, sector_t sector,
 {
 	struct bio *bio;
 
+	if (!bdev_max_discard_sectors(bdev) || !bdev_discard_granularity(bdev))
+		return -EOPNOTSUPP;
+
 	while ((bio = blk_alloc_discard_bio(bdev, &sector, &nr_sects,
 			gfp_mask)))
 		*biop = bio_chain_and_submit(*biop, bio);
@@ -90,13 +93,16 @@ int blkdev_issue_discard(struct block_device *bdev, sector_t sector,
 	int ret = 0;
 
 	blk_start_plug(&plug);
-	__blkdev_issue_discard(bdev, sector, nr_sects, gfp_mask, &bio);
+	ret = __blkdev_issue_discard(bdev, sector, nr_sects, gfp_mask, &bio);
+	if (ret)
+		goto out_finish;
 	if (bio) {
 		ret = submit_bio_wait(bio);
 		if (ret == -EOPNOTSUPP)
 			ret = 0;
 		bio_put(bio);
 	}
+out_finish:
 	blk_finish_plug(&plug);
 
 	return ret;
