@@ -16,3 +16,4 @@ GPU驱动开发者指南
    :maxdepth: 2
 
    drm-gem-mmap-analysis
+   drm-subsystem-flow
