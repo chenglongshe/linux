@@ -190,11 +190,22 @@ echo "Build directory: $BUILD_DIR"
 # Extract all .c and .h file paths from .cmd files.
 # 从所有 .cmd 文件中用正则提取 .c 和 .h 文件路径。
 # The regex matches file paths ending in .c or .h.
-# We strip any leading './' to normalize paths.
-# 正则匹配以 .c 或 .h 结尾的文件路径，并去除前导 './' 以统一路径格式。
+# We normalize paths by:
+#   1. Stripping leading './'
+#   2. Resolving '../' components (e.g., a/b/../c -> a/c)
+# This is critical because .cmd files may record paths with relative
+# components like "edma_drv/../include/header.h" while find reports
+# the canonical form "include/header.h". Without resolving '..', such
+# headers would be incorrectly flagged as uncompiled.
+# 正则匹配以 .c 或 .h 结尾的文件路径，并进行路径规范化：
+#   1. 去除前导 './' 以统一路径格式
+#   2. 解析 '../' 路径组件（如 a/b/../c 变为 a/c）
+# 这一步至关重要，因为 .cmd 文件中可能包含相对路径（如
+# edma_drv/../include/header.h），而 find 输出的是规范路径（如
+# include/header.h）。如果不解析 '..'，这些头文件会被错误标记为未编译。
 find "$BUILD_DIR" -name '.*.cmd' -type f -print0 2>/dev/null | \
 	xargs -0 grep -hoE '[a-zA-Z0-9_/.+-]+\.[ch]' 2>/dev/null | \
-	sed 's|^\./||' | \
+	sed -e 's|^\./||' -e ':loop' -e 's|[^/][^/]*/\.\./||' -e 't loop' | \
 	sort -u > "$TMP_DIR/compiled_files.txt"
 
 # Step 3: Find files present in the source tree but not referenced
