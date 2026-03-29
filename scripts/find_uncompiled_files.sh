@@ -125,8 +125,7 @@ fi
 # We extract all .c and .h paths from these files to build the set of
 # files that participated in compilation.
 
-cmd_count=$(find "$BUILD_DIR" -name '.*.cmd' -type f 2>/dev/null | head -1 | wc -l)
-if [ "$cmd_count" -eq 0 ]; then
+if ! find "$BUILD_DIR" -name '.*.cmd' -type f -print -quit 2>/dev/null | grep -q .; then
 	echo "Warning: No .cmd files found in '$BUILD_DIR'." >&2
 	echo "The kernel must be built first to generate build metadata." >&2
 	echo "Listing all .c and .h files as uncompiled." >&2
