@@ -82,7 +82,6 @@ static const struct drm_driver hibmc_driver = {
 	.minor			= 0,
 	.debugfs_init		= drm_vram_mm_debugfs_init,
 	.dumb_create            = hibmc_dumb_create,
-	.dumb_map_offset        = drm_gem_ttm_dumb_map_offset,
 	DRM_FBDEV_TTM_DRIVER_OPS,
 };
 

@@ -32,10 +32,18 @@ Subsystem-wide refactorings
 Remove custom dumb_map_offset implementations
 ---------------------------------------------
 
-All GEM based drivers should be using drm_gem_create_mmap_offset() instead.
-Audit each individual driver, make sure it'll work with the generic
-implementation (there's lots of outdated locking leftovers in various
-implementations), and then remove it.
+Most GEM based drivers now use the generic drm_gem_dumb_map_offset()
+implementation. The remaining drivers with custom implementations are:
+
+- omapdrm: Uses different mmap sizes for tiled buffers
+  (omap_gem_mmap_size() vs obj->size), so it cannot use the generic
+  implementation without further changes.
+
+- i915: Has a fundamentally different mmap offset allocation scheme that
+  selects mmap types based on hardware capabilities (FIXED/WC/GTT).
+
+These two drivers need more invasive refactoring to remove their custom
+implementations.
 
 Contact: Simona Vetter, respective driver maintainers
 

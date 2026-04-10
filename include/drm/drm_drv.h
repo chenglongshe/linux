@@ -356,8 +356,14 @@ struct drm_driver {
 	 * Allocate an offset in the drm device node's address space to be able to
 	 * memory map a dumb buffer.
 	 *
-	 * The default implementation is drm_gem_create_mmap_offset(). GEM based
-	 * drivers must not overwrite this.
+	 * The default implementation is drm_gem_dumb_map_offset(). GEM based
+	 * drivers should use the default and must not overwrite this, since
+	 * drm_gem_create_mmap_offset() is idempotent and works correctly for
+	 * both regular GEM and TTM-backed objects.
+	 *
+	 * Only non-GEM drivers or drivers with fundamentally different mmap
+	 * offset allocation (e.g., i915, omapdrm) should provide a custom
+	 * implementation.
 	 *
 	 * Called by the user via ioctl.
 	 *

@@ -143,8 +143,7 @@ drm_gem_vram_plane_helper_cleanup_fb(struct drm_plane *plane,
  */
 #define DRM_GEM_VRAM_DRIVER \
 	.debugfs_init	 = drm_vram_mm_debugfs_init, \
-	.dumb_create	 = drm_gem_vram_driver_dumb_create, \
-	.dumb_map_offset = drm_gem_ttm_dumb_map_offset
+	.dumb_create	 = drm_gem_vram_driver_dumb_create
 
 /*
  *  VRAM memory manager

@@ -12,7 +12,6 @@
 
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_client.h>
-#include <drm/drm_gem_ttm_helper.h>
 #include <drm/drm_ioctl.h>
 #include <drm/drm_managed.h>
 #include <drm/drm_pagemap_util.h>
@@ -400,7 +399,6 @@ static struct drm_driver driver = {
 	.gem_prime_import = xe_gem_prime_import,
 
 	.dumb_create = xe_bo_dumb_create,
-	.dumb_map_offset = drm_gem_ttm_dumb_map_offset,
 #ifdef CONFIG_PROC_FS
 	.show_fdinfo = xe_drm_client_fdinfo,
 #endif

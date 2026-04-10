@@ -18,7 +18,6 @@
 #include <drm/clients/drm_client_setup.h>
 #include <drm/drm_drv.h>
 #include <drm/drm_fbdev_ttm.h>
-#include <drm/drm_gem_ttm_helper.h>
 #include <drm/drm_ioctl.h>
 #include <drm/drm_module.h>
 #include <drm/drm_sysfs.h>
@@ -1591,7 +1590,6 @@ static const struct drm_driver driver = {
 	.postclose = vmw_postclose,
 
 	.dumb_create = vmw_dumb_create,
-	.dumb_map_offset = drm_gem_ttm_dumb_map_offset,
 
 	.prime_fd_to_handle = vmw_prime_fd_to_handle,
 	.prime_handle_to_fd = vmw_prime_handle_to_fd,
