@@ -900,7 +900,7 @@ static void bfq_update_fin_time_enqueue(struct bfq_entity *entity,
 	 * finish timestamps of non weight-raised queues.
 	 */
 	if (backshifted && bfq_gt(st->vtime, entity->finish)) {
-		unsigned long delta = st->vtime - entity->finish;
+		u64 delta = st->vtime - entity->finish;
 
 		if (bfqq)
 			delta /= bfqq->wr_coeff;
