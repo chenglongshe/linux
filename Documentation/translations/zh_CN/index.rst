@@ -61,6 +61,16 @@
    subsystem-apis
    内核中的锁 <locking/index>
 
+GPU驱动文档
+-----------
+
+GPU和DRM子系统相关文档。
+
+.. toctree::
+   :maxdepth: 1
+
+   gpu/index
+
 开发工具和流程
 --------------
 
