@@ -1796,6 +1796,9 @@ static unsigned int bfq_actuator_index(struct bfq_data *bfqd, struct bio *bio)
 	unsigned int i;
 	sector_t end;
 
+	if (!bio)
+		return 0;
+
 	/* no search needed if one or zero ranges present */
 	if (bfqd->num_actuators == 1)
 		return 0;
