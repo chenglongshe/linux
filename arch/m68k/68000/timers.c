@@ -17,8 +17,10 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
+#include <linux/bitfield.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
+#include <linux/errno.h>
 #include <linux/clocksource.h>
 #include <linux/rtc.h>
 #include <asm/setup.h>
@@ -121,15 +123,28 @@ void hw_timer_init(void)
 
 int m68328_hwclk(int set, struct rtc_time *t)
 {
-	if (!set) {
-		long now = RTCTIME;
-		t->tm_year = 1;
-		t->tm_mon = 0;
-		t->tm_mday = 1;
-		t->tm_hour = (now >> 24) % 24;
-		t->tm_min = (now >> 16) % 60;
-		t->tm_sec = now % 60;
+	u32 now;
+
+	if (set) {
+		if ((unsigned int)t->tm_hour >= 24 ||
+		    (unsigned int)t->tm_min >= 60 ||
+		    (unsigned int)t->tm_sec >= 60)
+			return -EINVAL;
+
+		now = FIELD_PREP(RTCTIME_HOURS_MASK, t->tm_hour) |
+		      FIELD_PREP(RTCTIME_MINUTES_MASK, t->tm_min) |
+		      FIELD_PREP(RTCTIME_SECONDS_MASK, t->tm_sec);
+		RTCTIME = now;
+		return 0;
 	}
+
+	now = RTCTIME;
+	t->tm_year = 1;
+	t->tm_mon = 0;
+	t->tm_mday = 1;
+	t->tm_hour = FIELD_GET(RTCTIME_HOURS_MASK, now);
+	t->tm_min = FIELD_GET(RTCTIME_MINUTES_MASK, now);
+	t->tm_sec = FIELD_GET(RTCTIME_SECONDS_MASK, now);
 
 	return 0;
 }
