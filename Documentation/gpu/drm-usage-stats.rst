@@ -218,3 +218,44 @@ Driver specific implementations
 * :ref:`panthor-usage-stats`
 * :ref:`xe-usage-stats`
 * :ref:`amdxdna-usage-stats`
+
+Virtio GPU memory accounting
+============================
+
+The virtio_gpu driver reports memory for the unique GEM objects referenced by
+handles in one DRM client (one open DRM file). Multiple handles to one object
+are counted once. Readers should use ``drm-client-id`` to identify duplicated
+file descriptors. A client may be shared by multiple processes, and one object
+may be counted in multiple clients; these values are not process totals or
+device-wide physical memory usage.
+
+``drm-total-memory`` counts page-aligned GEM sizes of local guest shmem
+objects, including guest-only blobs and the guest backing of mixed blobs.
+``drm-shared-memory`` counts the subset considered shared by the DRM GEM
+helper: objects with multiple handles or an associated dma-buf. Export does
+not establish that another client has imported the object.
+
+``drm-total-host3d`` and ``drm-shared-host3d`` use the same sharing rule for
+host-only blobs, counting original requested blob sizes. They are logical
+sizes, not measurements of host RAM or VRAM. Host creation is asynchronous,
+so the values do not confirm host resource creation.
+
+``drm-virtio-mixed-blob-logical`` counts original requested sizes of mixed
+blobs. Their guest backing is already counted in memory; this supplementary
+value does not measure additional host allocation.
+``drm-virtio-imported-logical`` counts GEM sizes of external dma-buf imports.
+Their backing and residency are unknown, so they are excluded from memory and
+host3d totals. A same-device reimport that reuses the original GEM object
+follows its original type.
+
+When host-visible memory is supported, ``drm-virtio-host-visible-window``
+counts allocated window sizes for this client's local host-only objects.
+It is page aligned, may include mappings in progress, and does not indicate
+host residency. The field is omitted on devices without host-visible memory.
+
+Statistics are snapshots. Handle membership, sharing and mapping state can
+change during collection. If allocation or bounded snapshot retries fail,
+all driver memory fields are omitted rather than reporting partial values.
+The driver does not report resident, active or purgeable memory statistics.
+Host allocations and residency, including the host part of legacy virgl
+and mixed resources, are unavailable through the existing guest interface.

@@ -594,6 +594,7 @@ static int virtio_gpu_resource_create_blob_ioctl(struct drm_device *dev,
 	bo->guest_blob = guest_blob;
 	bo->host3d_blob = host3d_blob;
 	bo->blob_mem = rc_blob->blob_mem;
+	bo->blob_size = rc_blob->size;
 	bo->blob_flags = rc_blob->blob_flags;
 
 	obj = &bo->base.base;
