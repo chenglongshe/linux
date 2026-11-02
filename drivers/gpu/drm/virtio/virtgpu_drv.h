@@ -118,6 +118,7 @@ struct virtio_gpu_object {
 	bool from_host_pending;
 	bool host3d_blob, guest_blob;
 	uint32_t blob_mem, blob_flags;
+	u64 blob_size; /* unaligned userspace request */
 
 	int uuid_state;
 	uuid_t uuid;

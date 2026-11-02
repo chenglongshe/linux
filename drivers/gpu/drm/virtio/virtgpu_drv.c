@@ -30,6 +30,8 @@
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/poll.h>
+#include <linux/sort.h>
+#include <linux/vmalloc.h>
 #include <linux/vgaarb.h>
 #include <linux/wait.h>
 
@@ -323,7 +325,149 @@ MODULE_AUTHOR("Dave Airlie <airlied@redhat.com>");
 MODULE_AUTHOR("Gerd Hoffmann <kraxel@redhat.com>");
 MODULE_AUTHOR("Alon Levy");
 
-DEFINE_DRM_GEM_FOPS(virtio_gpu_driver_fops);
+/*
+ * A DRM file can contain multiple handles to the same object.  Keep an
+ * object reference for each captured handle until accounting is complete.
+ */
+struct virtio_gpu_fdinfo_entry {
+	struct drm_gem_object *obj;
+	bool shared;
+};
+
+static int virtio_gpu_fdinfo_cmp(const void *a, const void *b)
+{
+	const struct virtio_gpu_fdinfo_entry *x = a, *y = b;
+	unsigned long px = (unsigned long)x->obj, py = (unsigned long)y->obj;
+
+	return (px > py) - (px < py);
+}
+
+static void virtio_gpu_fdinfo_put(struct virtio_gpu_fdinfo_entry *entries,
+				  size_t nr)
+{
+	size_t i;
+
+	for (i = 0; i < nr; i++)
+		drm_gem_object_put(entries[i].obj);
+	kvfree(entries);
+}
+
+static struct virtio_gpu_fdinfo_entry *
+virtio_gpu_fdinfo_snapshot(struct drm_file *file, size_t *nr)
+{
+	struct virtio_gpu_fdinfo_entry *entries;
+	struct drm_gem_object *obj;
+	size_t capacity, count;
+	int id, attempt;
+
+	/* Bound retries if handles are being added continuously. */
+	for (attempt = 0; attempt < 4; attempt++) {
+		capacity = 0;
+		spin_lock(&file->table_lock);
+		idr_for_each_entry(&file->object_idr, obj, id)
+			capacity++;
+		spin_unlock(&file->table_lock);
+
+		entries = kvcalloc(max_t(size_t, capacity, 1),
+				   sizeof(*entries), GFP_KERNEL);
+		if (!entries)
+			return NULL;
+
+		count = 0;
+		spin_lock(&file->table_lock);
+		idr_for_each_entry(&file->object_idr, obj, id) {
+			if (count == capacity)
+				break;
+			drm_gem_object_get(obj);
+			entries[count].obj = obj;
+			count++;
+		}
+		spin_unlock(&file->table_lock);
+
+		if (!obj) {
+			*nr = count;
+			return entries;
+		}
+		virtio_gpu_fdinfo_put(entries, count);
+	}
+
+	return NULL;
+}
+
+static void virtio_gpu_account_size(struct drm_memory_stats *stats,
+				    bool shared, u64 size)
+{
+	if (shared)
+		stats->shared += size;
+	else
+		stats->private += size;
+}
+
+static void virtio_gpu_show_fdinfo(struct drm_printer *p, struct drm_file *file)
+{
+	struct virtio_gpu_device *vgdev = file->minor->dev->dev_private;
+	struct virtio_gpu_fdinfo_entry *entries;
+	struct drm_memory_stats memory = {}, host3d = {};
+	u64 mixed = 0, imported = 0, host_visible = 0;
+	size_t nr, i, j;
+
+	entries = virtio_gpu_fdinfo_snapshot(file, &nr);
+	if (!entries)
+		return;
+
+	/* These GEM fields are protected by object_name_lock. */
+	mutex_lock(&file->minor->dev->object_name_lock);
+	for (i = 0; i < nr; i++)
+		entries[i].shared =
+			drm_gem_object_is_shared_for_memory_stats(entries[i].obj);
+	mutex_unlock(&file->minor->dev->object_name_lock);
+
+	sort(entries, nr, sizeof(*entries), virtio_gpu_fdinfo_cmp, NULL);
+	for (i = 0; i < nr; i = j) {
+		struct drm_gem_object *obj = entries[i].obj;
+		struct virtio_gpu_object *bo;
+
+		for (j = i + 1; j < nr && entries[j].obj == obj; j++)
+			;
+
+		if (drm_gem_is_imported(obj)) {
+			imported += obj->size;
+			continue;
+		}
+
+		bo = gem_to_virtio_gpu_obj(obj);
+		if (bo->host3d_blob && !bo->guest_blob) {
+			struct virtio_gpu_object_vram *vram = to_virtio_gpu_vram(bo);
+
+			virtio_gpu_account_size(&host3d, entries[i].shared,
+						bo->blob_size);
+			spin_lock(&vgdev->host_visible_lock);
+			if (drm_mm_node_allocated(&vram->vram_node))
+				host_visible += vram->vram_node.size;
+			spin_unlock(&vgdev->host_visible_lock);
+		} else {
+			virtio_gpu_account_size(&memory, entries[i].shared,
+						obj->size);
+			if (bo->host3d_blob && bo->guest_blob)
+				mixed += bo->blob_size;
+		}
+	}
+	virtio_gpu_fdinfo_put(entries, nr);
+
+	drm_print_memory_stats(p, &memory, 0, "memory");
+	drm_print_memory_stats(p, &host3d, 0, "host3d");
+	drm_fdinfo_print_size(p, "drm", "virtio-imported", "logical", imported);
+	drm_fdinfo_print_size(p, "drm", "virtio-mixed-blob", "logical", mixed);
+	if (vgdev->has_host_visible)
+		drm_fdinfo_print_size(p, "drm", "virtio-host-visible", "window",
+				      host_visible);
+}
+
+static const struct file_operations virtio_gpu_driver_fops = {
+	.owner = THIS_MODULE,
+	DRM_GEM_FOPS,
+	.show_fdinfo = drm_show_fdinfo,
+};
 
 static const struct drm_driver driver = {
 	/*
@@ -347,6 +491,7 @@ static const struct drm_driver driver = {
 
 	.gem_create_object = virtio_gpu_create_object,
 	.fops = &virtio_gpu_driver_fops,
+	.show_fdinfo = virtio_gpu_show_fdinfo,
 
 	.ioctls = virtio_gpu_ioctls,
 	.num_ioctls = DRM_VIRTIO_NUM_IOCTLS,
